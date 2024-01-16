@@ -19,12 +19,12 @@ echo "Comparing: ${repos[@]}"
 # Iterate through the provided directories
 repos_header=""
 for repo in "${repos[@]}"; do
-    repos_header="${repos_header}exists in ${repo},"
+    repos_header="${repos_header}exists in ${repo};"
 done
 #echo "$repos_header"
 
 # Create CSV file with header
-echo "${repos_header}path,last commit author,last commit date,last commit short sha" > results.csv
+echo "${repos_header}path;last commit author;last commit date;last commit short sha" > results.csv
 
 # Function to get commit information for a directory path in a repository
 get_commit_info() {
@@ -53,6 +53,7 @@ for repo in "${repos[@]}"; do
     # Get the directory path without "meta/plasma.yaml" and repository name
     dir_path=$(dirname "$file")
     dir_path=$(echo "${dir_path}" | cut -d'/' -f2-)
+    dir_path=$(dirname $(echo "${dir_path}"))
 
     # Get commit information for the directory path
     commit_info=$(get_commit_info "$repo" "$dir_path")
@@ -92,8 +93,8 @@ for path in "${!latest_commit_info_timestamp[@]}"; do
     else
       path_exists="0"
     fi
-    exists="${exists}${path_exists},"
+    exists="${exists}${path_exists};"
   done
-  echo "${exists}${path},${latest_commit_info_author["$path"]},${latest_commit_info_timestamp["$path"]},${latest_commit_info_short_sha["$path"]}" >> results.csv
+  echo "${exists}${path};${latest_commit_info_author["$path"]};${latest_commit_info_timestamp["$path"]};${latest_commit_info_short_sha["$path"]}" >> results.csv
 done
 
