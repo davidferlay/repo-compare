@@ -24,13 +24,13 @@ done
 #echo "$repos_header"
 
 # Create CSV file with header
-echo "${repos_header}path;last commit author;last commit date;last commit short sha" > results.csv
+echo "${repos_header}role path;last commit author;last commit timestamp;last commit date;last commit short sha;last commit message" > results.csv
 
 # Function to get commit information for a directory path in a repository
 get_commit_info() {
   repo=$1
   path=$2
-  git --git-dir="$repo/.git" --work-tree="$repo" --no-pager log -1 --invert-grep --grep="versions bump\|change files due to new state build process\|change files due to new build state process" --date=iso-strict --format="%an|%ad|%h" -- "$path" 2>/dev/null
+  git --git-dir="$repo/.git" --work-tree="$repo" --no-pager log -1 --invert-grep --grep="versions bump\|Update docs\|change files due to new state build process\|change files due to new build state process\|Backport\|backport\|Init Emile\|Platform: bring changes from zen" --date=iso-strict --format="%an|%ad|%h|%s" -- "$path" 2>/dev/null
 }
 
 # Function to convert iso date to timestamp
@@ -42,6 +42,7 @@ iso_to_timestamp() {
 declare -A latest_commit_info_timestamp
 declare -A latest_commit_info_author
 declare -A latest_commit_info_short_sha
+declare -A latest_commit_info_message
 
 # Loop through each repository
 for repo in "${repos[@]}"; do
@@ -62,6 +63,7 @@ for repo in "${repos[@]}"; do
     commit_date=$(echo "$commit_info" | cut -d '|' -f 2)
     commit_author=$(echo "$commit_info" | cut -d '|' -f 1)
     commit_short_sha=$(echo "$commit_info" | cut -d '|' -f 3)
+    commit_message=$(echo "$commit_info" | cut -d '|' -f 4)
 
     # Convert commit date to timestamp for comparison
     commit_timestamp=$(iso_to_timestamp "$commit_date")
@@ -73,12 +75,14 @@ for repo in "${repos[@]}"; do
         latest_commit_info_timestamp["$dir_path"]=$commit_timestamp
         latest_commit_info_author["$dir_path"]=$commit_author
         latest_commit_info_short_sha["$dir_path"]=$commit_short_sha
+        latest_commit_info_message["$dir_path"]=$commit_message
       fi
     else
       # If the path hasn't been seen before, store the commit information
       latest_commit_info_timestamp["$dir_path"]=$commit_timestamp
       latest_commit_info_author["$dir_path"]=$commit_author
       latest_commit_info_short_sha["$dir_path"]=$commit_short_sha
+      latest_commit_info_message["$dir_path"]=$commit_message
     fi
   done <<< "$files"
 done
@@ -95,6 +99,7 @@ for path in "${!latest_commit_info_timestamp[@]}"; do
     fi
     exists="${exists}${path_exists};"
   done
-  echo "${exists}${path};${latest_commit_info_author["$path"]};${latest_commit_info_timestamp["$path"]};${latest_commit_info_short_sha["$path"]}" >> results.csv
+  latest_commit_info_date=$(date -d @${latest_commit_info_timestamp["$path"]} -u +'%d-%m-%Y')
+  echo "${exists}${path};${latest_commit_info_author["$path"]};${latest_commit_info_timestamp["$path"]};${latest_commit_info_date};${latest_commit_info_short_sha["$path"]};${latest_commit_info_message["$path"]}" >> results.csv
 done
 
