@@ -49,36 +49,36 @@ declare -A latest_commit_info_message
 for repo in "${repos[@]}"; do
   # Find all meta/plasma.yaml files in the repository
   files=$(ag -g "meta/plasma.yaml" "$repo" 2>/dev/null)
-  #files=$(ag -g "interaction/softwares/roles/jitsi_exporter/meta/plasma.yaml" "$repo" 2>/dev/null)
+  #files=$(ag -g "interaction/softwares/roles/jitsi_exporter/meta/plasma.yaml" "$repo" 2>/dev/null) # Example of last commit being filtered out by git log command and no other commit
 
   # Loop through each file
   while IFS= read -r file; do
     # Get the directory path without "meta/plasma.yaml" and repository name
-    dir_path=$(dirname "$file")
-    dir_path=$(echo "${dir_path}" | cut -d'/' -f2-)
-    dir_path=$(dirname $(echo "${dir_path}"))
-    echo "----------------------"
-    echo "repo: $repo"
-    echo "dir_path: $dir_path"
+    dir_path=$(echo "$file" | sed 's/^[^/]*\/\(.*\)\/meta\/plasma\.yaml$/\1/')
 
     # Get commit information for the directory path
     commit_info=$(get_commit_info "$repo" "$dir_path")
 
     # Extract commit date, author, and short sha from commit information
     commit_author=$(echo "$commit_info" | cut -d '|' -f 1)
-    echo "commit_author: $commit_author"
     commit_short_sha=$(echo "$commit_info" | cut -d '|' -f 3)
-    echo "commit_short_sha: $commit_short_sha"
     commit_message=$(echo "$commit_info" | cut -d '|' -f 4)
-    echo "commit_message: $commit_message"
     commit_date=$(echo "$commit_info" | cut -d '|' -f 2)
     # Fix issue where latest commit found has no author/message ?
     if [ -z "${commit_author}" ]; then commit_date="1970-01-01T00:00:00+00:00"; fi
-    echo "commit_date: $commit_date"
 
     # Convert commit date to timestamp for comparison
     commit_timestamp=$(iso_to_timestamp "$commit_date")
+
+    echo "----------------------"
+    echo "repo: $repo"
+    echo "dir_path: $dir_path"
+    echo "commit_author: $commit_author"
+    echo "commit_short_sha: $commit_short_sha"
+    echo "commit_message: $commit_message"
+    echo "commit_date: $commit_date"
     echo "commit_timestamp: $commit_timestamp"
+    #echo "commit_info: $commit_info"
 
     # Check if the path has been seen before and if the current commit date is later
     if [ -n "${latest_commit_info_timestamp["$dir_path"]}" ]; then
